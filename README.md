@@ -1,4 +1,4 @@
-# 🚶‍♂️ UR Fall Detection Classic ML
+# 🚶🏽‍♂️ UR Fall Detection Classic ML
 Projekt przedstawia system do detekcji upadków na podstawie wyznaczonych (przy pomocy frameworka [MMPose](https://mmpose.readthedocs.io/en/latest/installation.html)) punktów kluczowych w poszczególnych klatkach wideo wykorzystując do klasyfikacji metody klasycznego uczenia maszynowego. <br>
 W celu realizacji systemu zastosowano **klasyfikacje hierarchiczną** wykorzystującą dwa wytrenowane modele.
 
@@ -63,12 +63,97 @@ Dane po preprocessingu i agregacji można było wykorzystać do uczenia **drugie
 
 📒 Realizacja punktu znajduje się w folderze 'scripts' w pliku Jupyter Notebook - ***preprocessing.ipynb***
 
-### 3. Walidacja ...
+### 3. Walidacja
 
-### 4. Pełen system do detekcji upadków ...
+Zarówno dla **modelu A** (klasyfikacja pozy) jak i dla **modelu B** (klasyfikacja zdarzenia) zostały przetestowane 3 modele klasycznego uczenia maszynowego: **model SVM**, **model Random Forest**, oraz **model MLP**.
 
-## Ustawienie środowiska
+1. Walidacja **modelu A** - LeaveOneGroupOut
+Dla **modelu A** (klasyfikującego pozę) została przeprowadzona walidacja **LeaveOneGroupOut**, aby podzielić klatki
+sekwencjami w celu uniknięcia data leakage, gdzie uzyskano następujące rezultaty:
+
+| **Model** | **Accuracy** | **Recall** | **Lossess** |
+| --- | --- | --- | --- |
+| Random Forest | 0.967 | 0.61 | 0.11 |
+| SVM | 0.973 | 0.601 | 0.088 |
+| MLP | 0.968 | 0.595 | 0.152 |
+
+Oraz macierze pomyłek, które prezentują się następująco:
+
+<img width="945" height="264" alt="image" src="https://github.com/user-attachments/assets/8d49479e-4b77-4bf2-8a68-d425af753acd" />
+
+Na podstawie uzyskanych wyników wybrano jako najlepszy **model SVM**, który został później
+wykorzystany do stworzenia pełnego pipeline’u systemu detekcji upadków.
+
+2. Walidacja **modelu B** - LeaveOneOut
+Dla **modelu B** (klasyfikującego zdarzenie) została przeprowadzona walidacja LeaveOneOut, ponieważ dane zostały już wcześniej podzielone sekwencjami na pojedyncze wektory dla każdej sekwencji, uzyskano następujące rezultaty:
+
+| **Model** | **Accuracy** | **Recall** | **Lossess** |
+| --- | --- | --- | --- |
+| Random Forest | 0.933 | 0.644 | 0.32 |
+| SVM | 0.844 | 0.6 | 0.325 |
+| MLP | 0.844 | 0.578| 0.333 |
+
+Oraz macierze pomyłek, które prezentują się następująco:
+
+<img width="944" height="273" alt="image" src="https://github.com/user-attachments/assets/09a79dea-c014-4269-b7ff-ad90a551ed25" />
+
+Na podstawie uzyskanych wyników wybrano jako najlepszy **model Random Forest**, który
+został później wykorzystany do stworzenia pełnego pipeline’u systemu detekcji upadków.
+
+### 4. Pełen system do detekcji upadków 
+
+Pipeline detekcji upadków został zaprojektowany w następujący sposób:
+1. Badany film należy przepuścić przed detektor aby uzyskać plik JSON z danymi
+2. Uzyskany plik JSON umieszczamy w **systemie detekcji upadków**
+3. Wyciągamy informacje o keypointach w poszczególnych klatkach z pliku JSON
+4. Algorytm przechodzi po keypointach z każdej klatki, klasyfikując je Modelem A:
+   
+    **Jeżeli**:
+   
+   - Wszystkie klatki zostały sklasyfikowane jako 0 (postać nie znalazła się w
+pozycji leżącej) to system KOŃCZY działanie, zwracając, że film reprezentuje
+sekwencje **ADL**
+
+   - Co najmniej 3 klatki z rzędu zostały sklasyfikowane jako 1 (postać znalazła się
+w pozycji leżącej) przechodzimy do punktu 5.
+
+6. Obliczamy wszystkie statystyki (opisane w Modelowaniu sekwencji) dla wideo z
+keypointów aby uzyskać reprezentacje całego wideo w jednym tensorze
+7. Uzyskany tensor zostaje sklasyfikowany przez Model B:
+   
+    **Jeżeli**:
+   
+    - Model zwróci 0 to KONIEC, zwracając, że film reprezentuje sekwencje **ADL**
+    - Model zwróci 1 to KONIEC, zwracając, że film reprezentuje sekwencje **FALL**
+
+Uzyskane wyniki zaprezentowano poniżej:
+
+| **Model** | **Accuracy** | **Precision** |
+| --- | --- | --- |
+| Model A (SVM) | 0.967 | 0.644 |
+| Model B (Random Forest) | 1.000 | 1.00 |
+
+Oraz macierze pomyłek:
+
+<img width="944" height="402" alt="image" src="https://github.com/user-attachments/assets/79291696-915c-4913-befe-e3300b3b513d" />
+
+Wyniki są bardzo dobre, w przypadku modelu B do klasyfikacji zdarzenia, wynik 100% poprawności jest prawdopodobnie lekko mylnym wynikiem, wynik taki jest ponieważ do treningu i testowania jest mało danych (zaledwie 45 sekwencji). 
+
+## 📈 Podsumowanie
+
+System został przetestowany najpierw na pełnym zbiorze UR Fall Detection z następującymi rezultatami:
+
+<img width="638" height="253" alt="image" src="https://github.com/user-attachments/assets/6705899f-aa03-4a5b-b3de-fbe8513fe332" />
+
+System został też przetestowany na kilku sekwencjach z innego datasetu pozyskanego z strony [Kaggle](https://www.kaggle.com/datasets/payutch/fall-video-dataset):
+
+<img width="638" height="205" alt="image" src="https://github.com/user-attachments/assets/f40174cd-c5d5-4ad0-a114-49a6c24ca9a4" />
+
+Zatem zaprojektowany **system detekcji upadku**, oparty na hierarchicznej klasyfikacji, z modelami wytrenowanymi na zbiorze UR Fall Detection, radzi sobie bardzo dobrze, myli się w sytuacjach nie jednoznacznych gdy osoba na wideo siada lub kładzie się w bardzo dynamiczny sposób, system rozpoznaje to wtedy jako upadek, mimo iż to czynność codzienna.
+
 <a id="env"></a>
+## 🌐 Ustawienie środowiska
+
 ### 1. Klonowanie repozytorium:
 
 Aby sklonować repozytorium:
