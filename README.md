@@ -1,6 +1,6 @@
 # 🚶🏽‍♂️ UR Fall Detection Classic ML
 Projekt przedstawia system do detekcji upadków na podstawie wyznaczonych (przy pomocy frameworka [MMPose](https://mmpose.readthedocs.io/en/latest/installation.html)) punktów kluczowych w poszczególnych klatkach wideo wykorzystując do klasyfikacji metody klasycznego uczenia maszynowego. <br>
-W celu realizacji systemu zastosowano **klasyfikacje hierarchiczną** wykorzystującą dwa wytrenowane modele.
+W celu realizacji systemu zastosowano **klasyfikacje dwuetapową** wykorzystującą dwa wytrenowane modele.
 
 ## 📚 O projekcie
 Danymi wykorzystanymi w projekcie były dane z datasetu [UR Fall Detection](https://fenix.ur.edu.pl/mkepski/ds/uf.html). Projekt zawiera:
@@ -149,7 +149,7 @@ System został też przetestowany na kilku sekwencjach z innego datasetu pozyska
 
 <img width="638" height="205" alt="image" src="https://github.com/user-attachments/assets/f40174cd-c5d5-4ad0-a114-49a6c24ca9a4" />
 
-Zatem zaprojektowany **system detekcji upadku**, oparty na hierarchicznej klasyfikacji, z modelami wytrenowanymi na zbiorze UR Fall Detection, radzi sobie bardzo dobrze, myli się w sytuacjach nie jednoznacznych gdy osoba na wideo siada lub kładzie się w bardzo dynamiczny sposób, system rozpoznaje to wtedy jako upadek, mimo iż to czynność codzienna.
+Zatem zaprojektowany **system detekcji upadku**, oparty na dwuetapowej klasyfikacji, z modelami wytrenowanymi na zbiorze UR Fall Detection, radzi sobie bardzo dobrze, myli się w sytuacjach nie jednoznacznych gdy osoba na wideo siada lub kładzie się w bardzo dynamiczny sposób, system rozpoznaje to wtedy jako upadek, mimo iż to czynność codzienna.
 
 <a id="env"></a>
 ## 🌐 Ustawienie środowiska
